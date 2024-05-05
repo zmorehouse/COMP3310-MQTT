@@ -4,29 +4,36 @@ import time
 host = "localhost"
 port = 1883
 
-instance = 1
 qos = 1
-delay = 4  
-topic = f"counter/{instance}/{qos}/{delay}"
+delay = 4
+instance_count = 5
 
 def on_connect(client, userdata, flags, reason_code, properties):
     print(f"Connected with result code {reason_code}")
+    client.subscribe("request/qos")
+    client.subscribe("request/delay")
+    client.subscribe("request/instancecount")
+    print("Subscribed to request topics.")
 
-def publish_sequence(client, topic):
-    counter = 0
-    while counter < 10:
-        message = str(counter)
-        client.publish(topic, message, qos=2)
-        counter += 1
-        time.sleep(delay / 1000) 
+def on_message(client, userdata, message):
+    global qos, delay, instance_count
+    print(f"Received message: {message.payload.decode()} on topic: {message.topic}")
+    if message.topic == "request/qos":
+        qos = int(message.payload)
+        print(f"QoS set to {qos}")
+    elif message.topic == "request/delay":
+        delay = int(message.payload)
+        print(f"Delay set to {delay}ms")
+    elif message.topic == "request/instancecount":
+        instance_count = int(message.payload)
+        print(f"Instance count set to {instance_count}")
 
-mqttc = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
-mqttc.on_connect = on_connect
+def publish_sequence():
+    mqttc = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
+    mqttc.on_connect = on_connect
+    mqttc.on_message = on_message
 
-mqttc.connect(host, port, 60)
-print("Connected to broker.")
+    mqttc.connect(host, port, 60)
+    mqttc.loop_forever()
 
-publish_sequence(mqttc, topic)
-print("Finished publishing message sequence.")
-
-mqttc.loop_forever()
+publish_sequence()
