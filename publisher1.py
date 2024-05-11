@@ -44,7 +44,7 @@ def on_message(client, userdata, message):
 def publish_counter(client):
     global qos, delay, instance_count, tracker, pub_number
     topic = f"counter/{pub_number}/{qos}/{delay}"
-    print('Printing topic: ', topic, 'with qos: ', qos, 'and delay: ', delay, 'ms.')
+    print(f"Publishing to counter/{pub_number}/{qos}/{delay}")
 
     start_time = time.time()
     duration = 1

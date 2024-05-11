@@ -1,4 +1,5 @@
 @echo off
+start python listener.py
 start python publisher1.py
 start python publisher2.py
 start python publisher3.py
