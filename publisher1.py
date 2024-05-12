@@ -34,6 +34,7 @@ def on_message(client, userdata, message):
         tracker += 1
     if tracker == 3:
         if pub_number <= comparison:
+
             publish_counter(client)
             tracker = 0
         else:
@@ -47,12 +48,13 @@ def publish_counter(client):
     print(f"Publishing to counter/{pub_number}/{qos}/{delay}")
 
     start_time = time.time()
-    duration = 1
+    duration = 15
 
     counter = 0
     while time.time() < start_time + duration:
         counter += 1
         client.publish(topic, str(counter), qos=qos)
+        print(f"Published: {counter} to topic: {topic}")
         time.sleep(delay / 1000)  # Delay in milliseconds
 
     tracker = 0

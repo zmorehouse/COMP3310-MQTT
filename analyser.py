@@ -14,23 +14,14 @@ qos_levels = [0, 1, 2]
 
 # Function to publish a message to the specified topic
 def publish_message(topic, message):
-    publish.single(topic, payload=message, hostname=host, port=port)
-    print(f"Published: {message} to topic: {topic}")
+    global analyser_qos
+    publish.single(topic, payload=message, hostname=host, port=port, qos=analyser_qos)
+    print(f"Published: {message} to topic: {topic} at qos: {analyser_qos}")
 
 # Function to handle incoming messages
 def on_message(client, userdata, message):
     global numberOfMessage
     numberOfMessage += 1
-
-# Function to start MQTT client and subscribe to topics
-def start_mqtt_client(qos, delay, instance_count):
-    global analyser_qos
-    mqttc = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
-    mqttc.on_message = on_message
-    mqttc.connect(host, port, 60)
-    mqttc.subscribe(f"counter/{instance_count}/{qos}/{delay}")
-    print(f"Subscribed to counter/{instance_count}/{qos}/{delay}.")
-    mqttc.loop_start()
 
 # Function to publish values with a delay of 60 seconds between each iteration
 def analyser():
@@ -43,6 +34,11 @@ def analyser():
 def publish_values():
     global analyser_qos
     global numberOfMessage
+    mqttc = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
+    mqttc.connect(host, port, 60)
+    mqttc.on_message = on_message
+    mqttc.loop_start()
+
     for instance_count in instance_counts:
         for delay in delays:
             for qos in qos_levels:
@@ -50,12 +46,11 @@ def publish_values():
                 publish_message("request/delay", str(delay))
                 publish_message("request/instancecount", str(instance_count))
                 print("Values published successfully.")
-                time.sleep(2)
 
-                # Start MQTT client after publishing messages
-                start_mqtt_client(qos, delay, instance_count)
+                mqttc.subscribe(f"counter/{instance_count}/{qos}/{delay}", qos=analyser_qos)
+                print(f"Subscribed to counter/{instance_count}/{qos}/{delay}.") 
 
-                time.sleep(5)  # Adjust this delay according to your requirements
+                time.sleep(16.25)  # Adjust this delay according to your requirements
                 print(f'Number of messages {numberOfMessage}')
                 numberOfMessage = 0
 

@@ -1,18 +1,18 @@
 import paho.mqtt.client as mqtt
 import time
 
-host = "localhost"
+host = "broker.emqx.io"
 port = 1883
 numberOfMessage = 0
 
 def on_connect(client, userdata, flags, reason_code, properties):
     print(f"Connected with result code {reason_code}.")
-    client.subscribe("counter/1/1/1")
+    client.publish("/zac/comp3310", 'Testing QoS', qos=2)
+
+
 
 def on_message(client, userdata, message):
-    global numberOfMessage
     print(f"Received message: {message.payload.decode()} on topic: {message.topic}")
-    numberOfMessage += 1
     print(numberOfMessage)
 
 def publish_sequence():
