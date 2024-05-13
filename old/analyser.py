@@ -21,6 +21,7 @@ def publish_message(topic, message):
 # Function to handle incoming messages
 def on_message(client, userdata, message):
     global numberOfMessage
+    
     numberOfMessage += 1
 
 # Function to publish values with a delay of 60 seconds between each iteration
@@ -30,6 +31,14 @@ def analyser():
         publish_values()
         analyser_qos += 1
     print('All values published successfully.')
+'''
+def statistic_checker(numberOfMessage):
+    msgs_a_second = numberOfMessage / 10
+    rate_of_msg_loss = 
+    out_of_order_msgs = 
+    median_intermessage_gap = 
+
+'''
 
 def publish_values():
     global analyser_qos
@@ -49,9 +58,10 @@ def publish_values():
 
                 mqttc.subscribe(f"counter/{instance_count}/{qos}/{delay}", qos=analyser_qos)
                 print(f"Subscribed to counter/{instance_count}/{qos}/{delay}.") 
-
-                time.sleep(16.25)  # Adjust this delay according to your requirements
+                
+                time.sleep(15)  # Adjust this delay according to your requirements
                 print(f'Number of messages {numberOfMessage}')
+
                 numberOfMessage = 0
 
     print(f'All values published at qos: {analyser_qos}')

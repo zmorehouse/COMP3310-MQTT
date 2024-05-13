@@ -48,7 +48,7 @@ def publish_counter(client):
     print(f"Publishing to counter/{pub_number}/{qos}/{delay}")
 
     start_time = time.time()
-    duration = 15
+    duration = 5
 
     counter = 0
     while time.time() < start_time + duration:

@@ -1,0 +1,25 @@
+
+
+$SYS/broker/clients/maximum
+
+$SYS/broker/clients/total
+The total number of active and inactive clients currently connected and registered on the broker.
+
+Totals
+
+$SYS/broker/publish/messages/received
+The total number of PUBLISH messages received since the broker started.
+
+$SYS/broker/publish/messages/dropped
+The total number of publish messages that have been dropped due to inflight/queuing limits.
+
+Averages
+
+$SYS/broker/load/messages/received/+
+The moving average of the number of all types of MQTT messages received by the broker over different time intervals. The final "+" of the hierarchy can be 1min, 5min or 15min. The value returned represents the number of messages received in 1 minute, averaged over 1, 5 or 15 minutes.
+
+$SYS/broker/load/publish/dropped/+
+The moving average of the number of publish messages dropped by the broker over different time intervals. This shows the rate at which durable clients that are disconnected are losing messages. The final "+" of the hierarchy can be 1min, 5min or 15min. The value returned represents the number of messages dropped in 1 minute, averaged over 1, 5 or 15 minutes.
+
+$SYS/broker/load/publish/sent/+
+The moving average of the number of publish messages sent by the broker over different time intervals. The final "+" of the hierarchy can be 1min, 5min or 15min. The value returned represents the number of publish messages sent in 1 minute, averaged over 1, 5 or 15 minutes.
