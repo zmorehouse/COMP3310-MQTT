@@ -5,6 +5,8 @@ import os
 import pandas as pd
 
 class Publisher:
+    shared_counter_lock = threading.Lock()
+    iteration_counter = 0  
     
     def __init__(self, pub_number):
         self.host = "localhost"
@@ -42,6 +44,7 @@ class Publisher:
             comparison = int(message.payload)
             self.tracker += 1
         if self.tracker == 3:
+            Publisher.iteration_counter += 1  
             if self.pub_number <= comparison:
                 self.publish_counter()
                 self.tracker = 0
@@ -60,7 +63,6 @@ class Publisher:
             counter += 1
             self.client.publish(topic, str(counter), qos=self.qos)
             time.sleep(self.delay / 1000)  # Delay in milliseconds
-            
         logger(counter, topic)
 
 
@@ -68,9 +70,8 @@ def logger(counter, topic):
     if not os.path.exists('publisher_log.csv'):
         open('publisher_log.csv', 'w').close()  # Create an empty file
 
-    log_entry = pd.DataFrame({'Counter': [counter], 'Topic': [topic]})
+    log_entry = pd.DataFrame({'Iteration ':[Publisher.iteration_counter],'Counter': [counter], 'Topic': [topic]})
     log_entry.to_csv('publisher_log.csv', mode='a', header=False, index=False)
-
 
 def main():
     instances = 5

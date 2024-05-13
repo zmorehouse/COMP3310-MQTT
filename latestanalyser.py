@@ -35,7 +35,7 @@ def on_message(client, userdata, message):
     if message.topic.startswith("counter"):
         currentMessageCount = int(message.payload)
         currentTime = time.time()
-
+        
         if currentMessageCount != lastMessageCount + 1:
             outoforderMessages += 1
         lastMessageCount = currentMessageCount
@@ -92,10 +92,25 @@ def publish_values():
                 mqttc.subscribe(f"$SYS/broker/publish/messages/dropped", qos=analyser_qos)
 
                 '''
+    '''
+            if message.topic.startswith("counter/1"):
+            pub1_Message = int(message.payload)
 
-                calculate_statistics()
+            # Out Of Order Increment
+            if pub1_Message != pub1_LastMessage + 1:
+                outoforderMessages += 1
+            pub1_LastMessage = pub1_Message
 
-                # Reset values
+            currentTime = time.time()
+            # Average Time Calculation
+            if lastMessageTime is not None:
+                timeDiff_ms = (currentTime - lastMessageTime) * 1000
+                timeTracker.append(timeDiff_ms)
+            lastMessageTime = currentTime
+    '''
+            calculate_statistics()
+
+            # Reset values
                 # mqttc.unsubscribe('$SYS#')
                 numberOfMessages = 0
                 outoforderMessages = 0
@@ -112,8 +127,14 @@ def calculate_statistics():
         outoforderMessagespercentage = outoforderMessages / numberOfMessages * 100
     else:
         outoforderMessagespercentage = 0
-    msgsaSecond = numberOfMessages / 10
-    median_intermessage_gap = sum(timeTracker) / len(timeTracker)
+    if numberOfMessages != 0:
+        msgsaSecond = numberOfMessages / 10
+    else:
+        msgsaSecond = 0
+    if len(timeTracker) != 0:
+        median_intermessage_gap = sum(timeTracker) / len(timeTracker)
+    else:
+        median_intermessage_gap = 0
 
     print(f'Out of order message%: {outoforderMessagespercentage}%')
     print(f'Messages per second: {msgsaSecond}')
