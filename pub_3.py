@@ -13,6 +13,8 @@ instance_count = 1
 tracker = 0
 combination_number = 0
 
+analyser_qos = -1
+
 comparison = 0
 def on_connect(client, userdata, flags, reason_code, properties):
     global pub_number, comparison
@@ -22,7 +24,7 @@ def on_connect(client, userdata, flags, reason_code, properties):
     print(f"Pub_{pub_number} connected to the server.")
 
 def on_message(client, userdata, message):
-    global tracker, qos, delay, instance_count, pub_number, combination_number
+    global tracker, qos, delay, instance_count, pub_number, combination_number, analyser_qos
     if message.topic == "request/qos":
         qos = int(message.payload)
         tracker += 1
@@ -35,15 +37,18 @@ def on_message(client, userdata, message):
         tracker += 1
     if tracker == 3:
         combination_number += 1
+        if qos == 0 and delay == 0 and instance_count == 1:
+            analyser_qos += 1
         if pub_number <= comparison:
-            publish_counter(client, comparison)
+            publish_counter(client, comparison, analyser_qos)
             tracker = 0
         else:
             tracker = 0
 
-def publish_counter(client, comparison):
+def publish_counter(client, comparison, analyser_qos):
     global qos, delay, instance_count, tracker, pub_number, combination_number
     topic = f"counter/{pub_number}/{qos}/{delay}"
+
     print('Publishing to topic', topic)
     start_time = time.time()
 
@@ -55,16 +60,16 @@ def publish_counter(client, comparison):
         time.sleep(delay / 1000) 
 
     if pub_number == comparison:
-        logger(combination_number, counter, topic)
+        logger(combination_number, counter, topic, analyser_qos)
 
-def logger(combination_number, counter, topic):
+def logger(combination_number, counter, topic, analyser_qos):
     if not os.path.exists('publisher_log.csv') or os.stat('publisher_log.csv').st_size == 0:
         with open('publisher_log.csv', 'w') as file:
-            file.write("No,Counter,Topic\n")
-        log_entry = pd.DataFrame({'No':[combination_number], 'Counter': [counter], 'Topic': [topic]})
+            file.write("No,Counter,Topic,Analyser QoS\n")
+        log_entry = pd.DataFrame({'No':[combination_number], 'Counter': [counter], 'Topic': [topic], 'Analyser QoS': [analyser_qos]})
         log_entry.to_csv('publisher_log.csv', mode='a', header=False, index=False)
     else:
-        log_entry = pd.DataFrame({'No':[combination_number], 'Counter': [counter], 'Topic': [topic]})
+        log_entry = pd.DataFrame({'No':[combination_number], 'Counter': [counter], 'Topic': [topic], 'Analyser QoS': [analyser_qos]})
         log_entry.to_csv('publisher_log.csv', mode='a', header=False, index=False)
 
 

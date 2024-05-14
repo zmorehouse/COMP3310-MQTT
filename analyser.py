@@ -8,7 +8,7 @@ import paho.mqtt.client as mqtt
 import paho.mqtt.subscribe as subscribe
 
 # Predefined values for instance count, delay, and qos
-instance_counts = [2, 3, 4, 5]
+instance_counts = [1, 2, 3, 4, 5]
 delays = [0, 1, 2, 4]
 qos_levels = [0, 1, 2]
 
@@ -68,10 +68,10 @@ def on_message(client, userdata, message):
     else: 
         if message.topic == "$SYS/broker/publish/messages/received":
             received_messages = int(message.payload.decode()) - total_received_messages
-            total_received_messages = received_messages + total_received_messages
+            total_received_messages = int(message.payload.decode())
         elif message.topic == "$SYS/broker/publish/messages/dropped":
             dropped_messages = int(message.payload.decode()) - total_dropped_messages
-            total_dropped_messages = dropped_messages + total_dropped_messages
+            total_dropped_messages = int(message.payload.decode())
 
 def publish_values():
     global combination_number, analyser_qos, messageTotal, numberOfMessages, outoforderMessages, lastMessageCount, lastMessageTime, timeTracker, received_messages, dropped_messages
@@ -85,16 +85,14 @@ def publish_values():
                 print("Values published successfully.")
                 combination_number += 1 
                 mqttc.subscribe(f"counter/{instance_count}/{qos}/{delay}", qos=analyser_qos)
-                print(f"Subscribed to counter/{instance_count}/{qos}/{delay}.") 
                 current_topic = f"counter/{instance_count}/{qos}/{delay}"
 
                 time.sleep(common.duration + 5)  
-                print(f'Number of messages {messageTotal}')
                 calculate_statistics(current_topic)
                 time.sleep(5)
 
-                subscribe.simple(f"$SYS/broker/publish/messages/received", qos=analyser_qos)
-                subscribe.simple(f"$SYS/broker/publish/messages/dropped", qos=analyser_qos)
+                mqttc.subscribe(f"$SYS/broker/publish/messages/received", qos=analyser_qos)
+                mqttc.subscribe(f"$SYS/broker/publish/messages/dropped", qos=analyser_qos)
                 time.sleep(5)
                 system_info(current_topic)
 
@@ -141,17 +139,13 @@ def calculate_statistics(current_topic):
     else:
         median_intermessage_gap = 0
 
-    print(f'Out of order message%: {outoforderMessagespercentage}%')
-    print(f'Messages per second: {msgsaSecond}')
-    print(f'Median intermessage gap: {median_intermessage_gap}ms')
-
     if not os.path.exists('analyser_log.csv') or os.stat('analyser_log.csv').st_size == 0:
         with open('analyser_log.csv', 'w') as file:  # Create an empty file
             file.write("Messages Received,Out of Order Messages,Messages per Second,Median Intermessage Gap, Topic, Analyser QoS\n")
-        log_entry = pd.DataFrame({'Messages Received': [numberOfMessages], 'Out of Order Messages': [outoforderMessages], 'Messages per Second': [msgsaSecond], 'Median Intermessage Gap': [median_intermessage_gap], 'Topic' : [current_topic], 'Analyser QoS': [analyser_qos]})
+        log_entry = pd.DataFrame({'Messages Received': [numberOfMessages], 'Out of Order Messages': [outoforderMessagespercentage], 'Messages per Second': [msgsaSecond], 'Median Intermessage Gap': [median_intermessage_gap], 'Topic' : [current_topic], 'Analyser QoS': [analyser_qos]})
         log_entry.to_csv('analyser_log.csv', mode='a', header=False, index=False)
     else:
-        log_entry = pd.DataFrame({'Messages Received': [numberOfMessages], 'Out of Order Messages': [outoforderMessages], 'Messages per Second': [msgsaSecond], 'Median Intermessage Gap': [median_intermessage_gap], 'Topic' : [current_topic], 'Analyser QoS': [analyser_qos]})
+        log_entry = pd.DataFrame({'Messages Received': [numberOfMessages], 'Out of Order Messages': [outoforderMessagespercentage], 'Messages per Second': [msgsaSecond], 'Median Intermessage Gap': [median_intermessage_gap], 'Topic' : [current_topic], 'Analyser QoS': [analyser_qos]})
         log_entry.to_csv('analyser_log.csv', mode='a', header=False, index=False)
 
 def get_system_stats():
@@ -159,8 +153,8 @@ def get_system_stats():
     mqttc.subscribe(f"$SYS/broker/publish/messages/received", qos=analyser_qos)
     mqttc.subscribe(f"$SYS/broker/publish/messages/dropped", qos=analyser_qos)
     time.sleep(10)
-    print(f'Init number of messages received: {total_received_messages}')
-    print(f'Init number of messages dropped: {total_dropped_messages}')
+    print(f'Initial number of messages received (previous runs): {total_received_messages}')
+    print(f'Initial number of messages dropped (previous runs): {total_dropped_messages}')
     startValues = True
 
 
