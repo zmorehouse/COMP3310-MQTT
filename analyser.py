@@ -11,7 +11,22 @@ instance_counts = [1, 2, 3, 4, 5]
 delays = [0, 1, 2, 4]
 qos_levels = [0, 1, 2]
 
+analyser_qos = 0
+
 messageTotal = 0
+numberOfMessages = 0
+outoforderMessages = 0
+lastMessageCount = 0
+lastMessageTime = None
+timeTracker = []
+
+
+currentTopic = ''
+maximum_brokers = ''
+received_messages = ''
+dropped_messages = ''
+
+startValues = False
 
 combination_number = 0
 
@@ -21,11 +36,34 @@ def publish_message(topic, message):
 
 
 def on_message(client, userdata, message):
-    global messageTotal
+    global messageTotal, numberOfMessages, outoforderMessages, lastMessageCount, lastMessageTime, timeTracker, maximum_brokers, received_messages, dropped_messages
 
     if message.topic.startswith("counter/"): # We know its not a system message
         messageTotal += 1
-    else: # It must be a system message
+
+        currentMessageCount = int(message.payload)
+        currentTime = time.time()
+        
+        if currentMessageCount != lastMessageCount + 1:
+            outoforderMessages += 1
+        lastMessageCount = currentMessageCount
+
+        if lastMessageTime is not None:
+            # Calculate the time difference in milliseconds
+            timeDiff_ms = (currentTime - lastMessageTime) * 1000
+            timeTracker.append(timeDiff_ms)
+        lastMessageTime = currentTime
+    
+        numberOfMessages += 1
+    elif startValues == False:
+        if message.topic == "$SYS/broker/clients/maximum":
+            maximum_brokers = 0
+        elif message.topic == "$SYS/broker/publish/messages/received":
+            received_messages = message.payload.decode()
+        elif message.topic == "$SYS/broker/publish/messages/dropped":
+            dropped_messages = message.payload.decode()
+    
+    else: 
         if message.topic == "$SYS/broker/clients/maximum":
             maximum_brokers = message.payload.decode()
         elif message.topic == "$SYS/broker/publish/messages/received":
@@ -33,9 +71,8 @@ def on_message(client, userdata, message):
         elif message.topic == "$SYS/broker/publish/messages/dropped":
             dropped_messages = message.payload.decode()
 
-
 def publish_values():
-    global combination_number, analyser_qos
+    global combination_number, analyser_qos, messageTotal, numberOfMessages, outoforderMessages, lastMessageCount, lastMessageTime, timeTracker, maximum_brokers, received_messages, dropped_messages
     for instance_count in instance_counts:
         for delay in delays:
             for qos in qos_levels:
@@ -45,12 +82,11 @@ def publish_values():
                 publish_message("request/instancecount", str(instance_count))
                 print("Values published successfully.")
                 combination_number += 1 
-                for i in range(1, instance_count+1):
-                    mqttc.subscribe(f"counter/{i}/{qos}/{delay}", qos=analyser_qos)
-                    print(f"Subscribed to counter/{i}/{qos}/{delay}.") 
+                mqttc.subscribe(f"counter/{instance_count}/{qos}/{delay}", qos=analyser_qos)
+                print(f"Subscribed to counter/{instance_count}/{qos}/{delay}.") 
                 
                 # Wait for 15 seconds
-                time.sleep(15)  
+                time.sleep(common.duration + 5)  
                 print(f'Number of messages {messageTotal}')
                 
                 mqttc.subscribe(f"$SYS/broker/clients/maximum", qos=analyser_qos)
@@ -61,41 +97,69 @@ def publish_values():
 
                 calculate_statistics()
 
+                #Reset All
+                mqttc.unsubscribe(f"counter/{instance_count}/{qos}/{delay}")
+                mqttc.unsubscribe(f"$SYS/broker/clients/maximum")
+                mqttc.unsubscribe(f"$SYS/broker/publish/messages/received")
+                mqttc.unsubscribe(f"$SYS/broker/publish/messages/dropped")
+
+                messageTotal = 0
+                numberOfMessages = 0
+                outoforderMessages = 0
+                timeTracker = []
+                lastMessageTime = None
+                lastMessageCount = 0
+
     print(f'All values published at qos: {analyser_qos}')
 
 
 def system_info():
-    global combination_number, maximum_brokers, received_messages, dropped_messages
-    if not os.path.exists('sys_log.csv') or os.stat('sys_log.csv').st_size == 0:
-        with open('sys_log.csv', 'w') as file:
-            file.write("No,MaxBrokers,RecievedMessages,DroppedMessages\n")
-        log_entry = pd.DataFrame({'No':[combination_number], 'MaxBrokers': [maximum_brokers], 'RecievedMessages': [received_messages], 'DroppedMessages': [dropped_messages]})
-        log_entry.to_csv('sys_log.csv', mode='a', header=False, index=False)
-    else:
-        log_entry = pd.DataFrame({'No':[combination_number], 'MaxBrokers': [maximum_brokers], 'RecievedMessages': [received_messages], 'DroppedMessages': [dropped_messages]})
-        log_entry.to_csv('sys_log.csv', mode='a', header=False, index=False)
+    print('System Statistics')
 
 def calculate_statistics():
-    global combination_number
-    msgsaSecond = messageTotal / 10
-    print(f'Average Rate of Number of messages: {msgsaSecond}')
+    global currentTopic, numberOfMessages, outoforderMessages, timeTracker, analyser_qos
 
-    if not os.path.exists('analyser_log.csv') or os.stat('analyser_log.csv').st_size == 0:
-        with open('analyser_log.csv', 'w') as file:
-            file.write("No,Messages\n")
-        log_entry = pd.DataFrame({'No':[combination_number], 'Messages': [messageTotal]})
-        log_entry.to_csv('analyser_log.csv', mode='a', header=False, index=False)
+    if outoforderMessages != 0 or numberOfMessages != 0:
+        outoforderMessagespercentage = outoforderMessages / numberOfMessages * 100
     else:
-        log_entry = pd.DataFrame({'No':[combination_number], 'Messages': [messageTotal]})
-        log_entry.to_csv('analyser_log.csv', mode='a', header=False, index=False)
+        outoforderMessagespercentage = 0
+    if numberOfMessages != 0:
+        msgsaSecond = numberOfMessages / 10
+    else:
+        msgsaSecond = 0
+    if len(timeTracker) != 0:
+        median_intermessage_gap = sum(timeTracker) / len(timeTracker)
+    else:
+        median_intermessage_gap = 0
+
+    print(f'Out of order message%: {outoforderMessagespercentage}%')
+    print(f'Messages per second: {msgsaSecond}')
+    print(f'Median intermessage gap: {median_intermessage_gap}ms')
+
+    if not os.path.exists('analyser_log.csv'):
+        open('analyser_log.csv', 'w').close()  # Create an empty file
+    log_entry = pd.DataFrame({'Mesages Recieved': [numberOfMessages], 'Out of Order Messages': [outoforderMessages], 'Messages per Second': [msgsaSecond], 'Median Intermessage Gap': [median_intermessage_gap], 'Topic' : [currentTopic], 'Analyser QoS': [analyser_qos]})
+    log_entry.to_csv('analyser_log.csv', mode='a', header=False, index=False)
+
+def get_system_stats():
+    global maximum_brokers, received_messages, dropped_messages
+    mqttc.subscribe(f"$SYS/broker/clients/maximum", qos=analyser_qos)
+    mqttc.subscribe(f"$SYS/broker/publish/messages/received", qos=analyser_qos)
+    mqttc.subscribe(f"$SYS/broker/publish/messages/dropped", qos=analyser_qos)
+    time.sleep(10)
+    print(f'Maximum number of brokers: {maximum_brokers}')
+    print(f'Number of messages received: {received_messages}')
+    print(f'Number of messages dropped: {dropped_messages}')
 
 
 if __name__ =='__main__':
     mqttc = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
     mqttc.connect(common.host, common.port, 60)
     mqttc.on_message = on_message
-    mqttc.loop_forever()
+    mqttc.loop_start()
 
+    get_system_stats()
+    startValues = True
     analyser_qos = 0
     while analyser_qos < 3:
         publish_values()

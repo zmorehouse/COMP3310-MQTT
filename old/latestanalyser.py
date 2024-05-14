@@ -1,3 +1,4 @@
+import common
 import paho.mqtt.publish as publish
 import paho.mqtt.client as mqtt
 import time
@@ -10,7 +11,6 @@ analyser_qos = 0
 numberOfMessages = 0
 outoforderMessages = 0
 lastMessageCount = 0
-duration = 15
 lastMessageTime = None
 timeTracker = []
 currentTopic = ''
@@ -80,11 +80,11 @@ def publish_values():
                 print("Values published successfully.")
                 currentTopic = f"counter/{instance_count}/{qos}/{delay}"
                 # Subscribe to ALL counters to track
-                for i in range(1, instance_count+1):
-                    mqttc.subscribe(f"counter/{i}/{qos}/{delay}", qos=analyser_qos)
-                    print(f"Subscribed to counter/{i}/{qos}/{delay}.") 
+
+                mqttc.subscribe(f"counter/{instance_count}/{qos}/{delay}", qos=analyser_qos)
+                print(f"Subscribed to counter/{i}/{qos}/{delay}.") 
                 
-                time.sleep(duration)  # Wait
+                time.sleep(common.duration + 5)  # Wait
                 print(f'Number of messages {numberOfMessages}') # Print total number of messages
                 '''
                 mqttc.subscribe(f"$SYS/broker/clients/maximum", qos=analyser_qos)
@@ -92,7 +92,7 @@ def publish_values():
                 mqttc.subscribe(f"$SYS/broker/publish/messages/dropped", qos=analyser_qos)
 
                 '''
-    '''
+
             if message.topic.startswith("counter/1"):
             pub1_Message = int(message.payload)
 
@@ -107,16 +107,16 @@ def publish_values():
                 timeDiff_ms = (currentTime - lastMessageTime) * 1000
                 timeTracker.append(timeDiff_ms)
             lastMessageTime = currentTime
-    '''
-            calculate_statistics()
+    ''' 
+    calculate_statistics()
 
             # Reset values
                 # mqttc.unsubscribe('$SYS#')
-                numberOfMessages = 0
-                outoforderMessages = 0
-                timeTracker = []
-                lastMessageTime = None
-                lastMessageCount = 0
+    numberOfMessages = 0
+    outoforderMessages = 0
+    timeTracker = []
+    lastMessageTime = None
+    lastMessageCount = 0
 
     print(f'All values published at qos: {analyser_qos}')
 
