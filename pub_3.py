@@ -54,7 +54,6 @@ def publish_counter(client, comparison):
         client.publish(topic, str(counter), qos=qos)
         time.sleep(delay / 1000) 
 
-    print(pub_number, comparison)
     if pub_number == comparison:
         logger(combination_number, counter, topic)
 
