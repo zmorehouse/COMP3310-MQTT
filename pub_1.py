@@ -5,6 +5,11 @@ import os
 import pandas as pd
 import paho.mqtt.client as mqtt
 
+
+
+
+
+
 pub_number = 1
 
 qos = 0
@@ -45,6 +50,7 @@ def on_message(client, userdata, message):
         else:
             tracker = 0
 
+
 def publish_counter(client, comparison, analyser_qos):
     global qos, delay, instance_count, tracker, pub_number, combination_number
     topic = f"counter/{pub_number}/{qos}/{delay}"
@@ -52,15 +58,21 @@ def publish_counter(client, comparison, analyser_qos):
     print('Publishing to topic', topic)
     start_time = time.time()
 
+
     counter = 0
+    print(delay)
+    print(delay / 1000)
 
     while time.time() < start_time + common.duration:
         counter += 1
         client.publish(topic, str(counter), qos=qos)
+        
         time.sleep(delay / 1000) 
+
 
     if pub_number == comparison:
         logger(combination_number, counter, topic, analyser_qos)
+
 
 def logger(combination_number, counter, topic, analyser_qos):
     if not os.path.exists('publisher_log.csv') or os.stat('publisher_log.csv').st_size == 0:
