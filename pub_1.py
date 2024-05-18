@@ -5,11 +5,6 @@ import os
 import pandas as pd
 import paho.mqtt.client as mqtt
 
-
-
-
-
-
 pub_number = 1
 
 qos = 0
@@ -60,8 +55,7 @@ def publish_counter(client, comparison, analyser_qos):
 
 
     counter = 0
-    print(delay)
-    print(delay / 1000)
+
 
     while time.time() < start_time + common.duration:
         counter += 1

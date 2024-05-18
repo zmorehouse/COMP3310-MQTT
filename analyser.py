@@ -5,10 +5,9 @@ import os
 import pandas as pd
 import paho.mqtt.publish as publish
 import paho.mqtt.client as mqtt
-import paho.mqtt.subscribe as subscribe
 
 # Predefined values for instance count, delay, and qos
-instance_counts = [1, 2, 3, 4, 5]
+instance_counts = [1,2,3,4,5]
 delays = [0, 1, 2, 4]
 qos_levels = [0, 1, 2]
 
@@ -49,15 +48,16 @@ def on_message(client, userdata, message):
         
         if currentMessageCount != lastMessageCount + 1:
             outoforderMessages += 1
+            lastMessageTime = currentTime
+        else:
+            if lastMessageTime is not None:
+                timeDiff_ms = (currentTime - lastMessageTime) * 1000
+                timeTracker.append(timeDiff_ms)
+            lastMessageTime = currentTime
         lastMessageCount = currentMessageCount
-
-        if lastMessageTime is not None:
-            # Calculate the time difference in milliseconds
-            timeDiff_ms = (currentTime - lastMessageTime) * 1000
-            timeTracker.append(timeDiff_ms)
-        lastMessageTime = currentTime
     
         numberOfMessages += 1
+
     
     elif startValues == False:
         if message.topic == "$SYS/broker/publish/messages/received":
@@ -94,7 +94,7 @@ def publish_values():
                 mqttc.subscribe(f"$SYS/broker/publish/messages/received", qos=analyser_qos)
                 mqttc.subscribe(f"$SYS/broker/publish/messages/dropped", qos=analyser_qos)
                 time.sleep(5)
-                system_info(current_topic)
+                system_info(current_topic, instance_count)
 
                 mqttc.unsubscribe(f"counter/{instance_count}/{qos}/{delay}")
                 mqttc.unsubscribe(f"$SYS/broker/publish/messages/received")
@@ -110,15 +110,21 @@ def publish_values():
     print(f'All values published at qos: {analyser_qos}')
 
 
-def system_info(current_topic):
+def system_info(current_topic, instance_count):
     global received_messages, dropped_messages, numberOfMessages, outoforderMessages, timeTracker, analyser_qos 
+    sys_msgs_a_second = round(((received_messages / instance_count) / common.duration), 2)
+    sys_dropped_msgs = round((dropped_messages / received_messages) * 100, 2)
+        
+
+
+
     if not os.path.exists('sys_log.csv') or os.stat('sys_log.csv').st_size == 0:
         with open('sys_log.csv', 'w') as file:  # Create an empty file
             file.write("Topic,Messages Received,Messages Dropped\n")
-        log_entry = pd.DataFrame({'Topic': [current_topic], 'Messages Received': [received_messages], 'Messages Dropped': [dropped_messages]})
+        log_entry = pd.DataFrame({'Topic': [current_topic], 'Messages Received / sec': [sys_msgs_a_second], 'Messages Dropped %': [sys_dropped_msgs]})
         log_entry.to_csv('sys_log.csv', mode='a', header=False, index=False)
     else:
-        log_entry = pd.DataFrame({'Topic': [current_topic], 'Messages Received': [received_messages], 'Messages Dropped': [dropped_messages]})
+        log_entry = pd.DataFrame({'Topic': [current_topic], 'Messages Received / sec': [sys_msgs_a_second], 'Messages Dropped %': [sys_dropped_msgs]})
         log_entry.to_csv('sys_log.csv', mode='a', header=False, index=False)
 
 
@@ -130,7 +136,7 @@ def calculate_statistics(current_topic):
         outoforderMessagespercentage = 0
 
     if numberOfMessages != 0:
-        msgsaSecond = round(numberOfMessages / 10, 3)
+        msgsaSecond = round(numberOfMessages / common.duration, 3)
     else:
         msgsaSecond = 0
 

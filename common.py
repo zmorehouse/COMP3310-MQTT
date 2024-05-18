@@ -1,3 +1,3 @@
 host = "localhost"
 port = 1883
-duration = 15
+duration = 60
