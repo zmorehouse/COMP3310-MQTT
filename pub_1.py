@@ -1,5 +1,4 @@
 import common
-
 import time
 import os
 import pandas as pd
@@ -71,11 +70,11 @@ def publish_counter(client, comparison, analyser_qos):
 def logger(combination_number, counter, topic, analyser_qos):
     if not os.path.exists('publisher_log.csv') or os.stat('publisher_log.csv').st_size == 0:
         with open('publisher_log.csv', 'w') as file:
-            file.write("No,Counter,Topic,Analyser QoS\n")
-        log_entry = pd.DataFrame({'No':[combination_number], 'Counter': [counter], 'Topic': [topic], 'Analyser QoS': [analyser_qos]})
+            file.write("Counter,Topic,Analyser QoS\n")
+        log_entry = pd.DataFrame({'Counter': [counter], 'Topic': [topic], 'Analyser QoS': [analyser_qos]})
         log_entry.to_csv('publisher_log.csv', mode='a', header=False, index=False)
     else:
-        log_entry = pd.DataFrame({'No':[combination_number], 'Counter': [counter], 'Topic': [topic], 'Analyser QoS': [analyser_qos]})
+        log_entry = pd.DataFrame({'Counter': [counter], 'Topic': [topic], 'Analyser QoS': [analyser_qos]})
         log_entry.to_csv('publisher_log.csv', mode='a', header=False, index=False)
 
 
