@@ -40,7 +40,7 @@ If you need to change either **the broker the scripts connect to** or **the dura
 #### Running without Batch File
 As batch files can be security risks, I understand not all may want to run the program via `run.bat`. If this is the case, please follow the below steps 
 1. Launch terminal with administrative privileges (to allow the program to write to relevant logs).
-2. CD to the ZM-MQTT Directory.
+2. CD to the /ZM_MQTT Directory.
 3. Run all 5 publisher instances using `python pub_1.py` -> `python pub_5.py`. Python3 is also usable here. 
 4. Once all publisher instances are running and successfully connected, launch the analyser script with `python analyser.py`.
 5. Wait for analyser to run all 180 tests, and close itself. The publishing instances will run indefinently until the terminal is closed, incase additional monitoring is required. 
