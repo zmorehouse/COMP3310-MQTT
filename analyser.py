@@ -166,9 +166,9 @@ def calculate_statistics(current_topic):
 
     # Calculate messages per second
     if number_of_messages != 0:
-        msgsaSecond = round(number_of_messages / common.duration, 3)
+        msgs_a_second = round(number_of_messages / common.duration, 3)
     else:
-        msgsaSecond = 0
+        msgs_a_second = 0
 
     # Calculate median intermessage gap
     if len(time_tracker) != 0:
@@ -180,7 +180,7 @@ def calculate_statistics(current_topic):
     log_entry = {
         'Messages Received': number_of_messages,
         'Out of Order Messages': outoforder_messagespercentage,
-        'Messages per Second': msgsaSecond,
+        'Messages per Second': msgs_a_second,
         'Median Intermessage Gap': median_intermessage_gap,
         'Topic': current_topic,
         'Analyser QoS': analyser_qos
