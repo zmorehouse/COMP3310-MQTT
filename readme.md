@@ -5,6 +5,8 @@ This repository contains a set of scripts designed to test and analyze the perfo
 
 ============================================
 
+**Important Note : While the program runs tests at 60 second increments, on high-spec computers this typically leads to the client queueing too many messages and lagging behind on x/0/0 tests. While these will eventually catch up, I recommend running the tests at 15 second durations to ensure results are accurate. This is outlined further in my report.** 
+ 
 ## Overview
 
 The testing suite conducts 180 tests, each lasting 60 seconds, and varying the following parameters:

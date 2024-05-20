@@ -92,6 +92,7 @@ def publish_values():
     for instance_count in instance_counts:
         for delay in delays:
             for qos in qos_levels:
+                
                 # Publish New Values
                 publish_message("request/qos", str(qos))
                 publish_message("request/delay", str(delay))
@@ -129,10 +130,17 @@ def publish_values():
 # Function to log system information to a CSV file
 def system_info(current_topic, instance_count):
     global received_messages, dropped_messages, number_of_messages, outoforder_messages, time_tracker, analyser_qos 
+    
+    if instance_count != 0 and common.duration != 0:
+        sys_msgs_a_second = round(((received_messages / instance_count) / common.duration), 2)
+    else:
+        sys_msgs_a_second = 0  
+        # Calculate percentage of dropped messages
+    if received_messages != 0:
+        sys_dropped_msgs = round((dropped_messages / received_messages) * 100, 2)
+    else:
+        sys_dropped_msgs = 0  
 
-    sys_msgs_a_second = round(((received_messages / instance_count) / common.duration), 2) # Calculate messages received per second
-    sys_dropped_msgs = round((dropped_messages / received_messages) * 100, 2) # Calculate percentage of dropped messages
-        
     # Define the CSV log
     log_entry = {
         'Topic': current_topic,
@@ -220,12 +228,12 @@ def get_system_stats():
 if __name__ == '__main__':
     mqttc = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
     mqttc.connect(common.host, common.port, 60)
-    print(f"Successfully connected to the server!")
+    print(f"Analyser successfully connected to the server!")
     mqttc.on_message = on_message
     mqttc.loop_start()
     get_system_stats() # Get initial system statistics
     analyser_qos = 0
-    while analyser_qos < 3: # Loop through all QoS levels of analyer qos
+    while analyser_qos < 3: # Loop through all QoS levels of analyser qos
         publish_values()
         analyser_qos += 1
     print('All tests published successfully.')
