@@ -1,4 +1,7 @@
 ''' 
+COMP3310 - A3 - MQTT Analysis Assignment
+Zac Morehouse | u7637337 
+
 Analyser Script for MQTT Testing Suite
 
 This script is designed to simulate an MQTT analyser as part of a testing suite 
@@ -121,7 +124,7 @@ def publish_values():
                 lastMessageTime = None
                 lastMessageCount = 0
 
-    print(f'All values published at qos: {analyser_qos}') # Print a message to indicate that all values have been published at a specific QoS
+    print(f'All values published at Analyser QoS: {analyser_qos}') # Print a message to indicate that all values have been published at a specific QoS
 
 # Function to log system information to a CSV file
 def system_info(current_topic, instance_count):
@@ -217,6 +220,7 @@ def get_system_stats():
 if __name__ == '__main__':
     mqttc = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
     mqttc.connect(common.host, common.port, 60)
+    print(f"Successfully connected to the server!")
     mqttc.on_message = on_message
     mqttc.loop_start()
     get_system_stats() # Get initial system statistics

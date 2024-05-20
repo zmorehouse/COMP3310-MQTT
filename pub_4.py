@@ -1,4 +1,7 @@
 '''
+COMP3310 - A3 - MQTT Analysis Assignment
+Zac Morehouse | u7637337 
+
 Publisher Script (Number 4) for MQTT Testing Suite
 
 This script is designed to simulate an MQTT publisher as part of a testing suite 
