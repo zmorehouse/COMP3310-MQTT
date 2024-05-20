@@ -1,4 +1,4 @@
-Topic,Messages Received,Messages Dropped
+Topic,Messages Received / sec,Messages Dropped %
 counter/1/0/0,59671.87,48.02
 counter/1/1/0,4369.2,0
 counter/1/2/0,4369.2,0

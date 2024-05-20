@@ -9,15 +9,14 @@ messages at specified intervals for a set duration and logs the results to a CSV
 Libraries Used:
 - common: Locally defined module for shared variables
 - time: To keep track of time delays
-- os: To write to file
-- pandas: To create dataframes for csv
-- paho.mqtt.client: To handle MQTT communications
+- os and csv: To write to a csv file
+- paho : MQTT library for Python for publishing and subscribing to a broker
 '''
 
 import common
 import time
 import os
-import pandas as pd
+import csv
 import paho.mqtt.client as mqtt
 
 # Define publisher number
@@ -86,15 +85,27 @@ def publish_counter(client, comparison, analyser_qos):
 
 # Function to log the results to a CSV file
 def logger(counter, topic, analyser_qos):
-    # Check if the log file exists and has content
-    if not os.path.exists('publisher_log.csv') or os.stat('publisher_log.csv').st_size == 0:
-        with open('publisher_log.csv', 'w') as file:
-            file.write("Counter,Topic,Analyser QoS\n")
-        log_entry = pd.DataFrame({'Counter': [counter], 'Topic': [topic], 'Analyser QoS': [analyser_qos]})
-        log_entry.to_csv('publisher_log.csv', mode='a', header=False, index=False)
-    else:
-        log_entry = pd.DataFrame({'Counter': [counter], 'Topic': [topic], 'Analyser QoS': [analyser_qos]})
-        log_entry.to_csv('publisher_log.csv', mode='a', header=False, index=False)
+    # Define the log entry
+    log_entry = {
+        'Counter': counter,
+        'Topic': topic,
+        'Analyser QoS': analyser_qos
+    }
+
+    # Check if the CSV file exists and if it's empty
+    file_exists = os.path.exists('publisher_log.csv')
+    file_is_empty = os.stat('publisher_log.csv').st_size == 0 if file_exists else True
+
+    # Write to the log file
+    with open('publisher_log.csv', 'a', newline='') as file:
+        writer = csv.DictWriter(file, fieldnames=["Counter", "Topic", "Analyser QoS"])
+        
+        # Write the header only if the file is new or empty
+        if file_is_empty:
+            writer.writeheader()
+        
+        # Write the log entry
+        writer.writerow(log_entry)
 
 # Main script execution
 if __name__ == "__main__":

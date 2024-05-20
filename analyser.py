@@ -9,16 +9,14 @@ inter-message gaps, and system performance metrics.
 Libraries Used:
 - common: Locally defined script for shared variables
 - time: To keep track of time delays
-- os: To write to file
-- pandas: To create dataframes for spreadsheet
-- paho.mqtt.publish: For publishing MQTT messages
-- paho.mqtt.client: For MQTT brokering and message handling
+- os and csv: To write to a csv file
+- paho : MQTT library for Python for publishing and subscribing to a broker
 '''
 
 import common
 import time
 import os
-import pandas as pd
+import csv
 import paho.mqtt.publish as publish
 import paho.mqtt.client as mqtt
 
@@ -95,7 +93,7 @@ def publish_values():
                 publish_message("request/qos", str(qos))
                 publish_message("request/delay", str(delay))
                 publish_message("request/instancecount", str(instance_count))
-                print("Values published successfully.")
+                print("Test values published successfully." + f" QoS: {qos}, Delay: {delay}, Instance Count: {instance_count}, Analyser QoS: {analyser_qos}")
 
                 # Once published, subscribe to the topic and wait for the publisher messages to arrive
                 mqttc.subscribe(f"counter/{instance_count}/{qos}/{delay}", qos=analyser_qos)
@@ -131,18 +129,29 @@ def system_info(current_topic, instance_count):
 
     sys_msgs_a_second = round(((received_messages / instance_count) / common.duration), 2) # Calculate messages received per second
     sys_dropped_msgs = round((dropped_messages / received_messages) * 100, 2) # Calculate percentage of dropped messages
-    
-    # Write to the system log file
-    if not os.path.exists('sys_log.csv') or os.stat('sys_log.csv').st_size == 0:
-        with open('sys_log.csv', 'w') as file:  # Create an empty file if it does not exist
-            file.write("Topic,Messages Received,Messages Dropped\n")
-        log_entry = pd.DataFrame({'Topic': [current_topic], 'Messages Received / sec': [sys_msgs_a_second], 'Messages Dropped %': [sys_dropped_msgs]})
-        log_entry.to_csv('sys_log.csv', mode='a', header=False, index=False)
-    else:
-        log_entry = pd.DataFrame({'Topic': [current_topic], 'Messages Received / sec': [sys_msgs_a_second], 'Messages Dropped %': [sys_dropped_msgs]})
-        log_entry.to_csv('sys_log.csv', mode='a', header=False, index=False)
+        
+    # Define the CSV log
+    log_entry = {
+        'Topic': current_topic,
+        'Messages Received / sec': sys_msgs_a_second,
+        'Messages Dropped %': sys_dropped_msgs
+    }
 
-# Function to calculate and log statistics
+    # Check if the CSV file exists and if it's empty
+    file_exists = os.path.exists('sys_log.csv')
+    file_is_empty = os.stat('sys_log.csv').st_size == 0 if file_exists else True
+
+    # Write to the log file
+    with open('sys_log.csv', 'a', newline='') as file:
+        writer = csv.DictWriter(file, fieldnames=["Topic", "Messages Received / sec", "Messages Dropped %"])
+    
+        # Write the header only if the file is new or empty
+        if file_is_empty:
+            writer.writeheader()
+        
+        # Write the log entry
+        writer.writerow(log_entry)
+
 def calculate_statistics(current_topic):
     global numberOfMessages, outoforderMessages, timeTracker, analyser_qos
 
@@ -164,15 +173,37 @@ def calculate_statistics(current_topic):
     else:
         median_intermessage_gap = 0
 
+    # Define the log entry
+    log_entry = {
+        'Messages Received': numberOfMessages,
+        'Out of Order Messages': outoforderMessagespercentage,
+        'Messages per Second': msgsaSecond,
+        'Median Intermessage Gap': median_intermessage_gap,
+        'Topic': current_topic,
+        'Analyser QoS': analyser_qos
+    }
+
+    # Check if the CSV file exists and if it's empty
+    file_exists = os.path.exists('analyser_log.csv')
+    file_is_empty = os.stat('analyser_log.csv').st_size == 0 if file_exists else True
+
     # Write to the analyser log file
-    if not os.path.exists('analyser_log.csv') or os.stat('analyser_log.csv').st_size == 0:
-        with open('analyser_log.csv', 'w') as file:  # Create an empty file if it does not exist
-            file.write("Messages Received,Out of Order Messages,Messages per Second,Median Intermessage Gap, Topic, Analyser QoS\n")
-        log_entry = pd.DataFrame({'Messages Received': [numberOfMessages], 'Out of Order Messages': [outoforderMessagespercentage], 'Messages per Second': [msgsaSecond], 'Median Intermessage Gap': [median_intermessage_gap], 'Topic' : [current_topic], 'Analyser QoS': [analyser_qos]})
-        log_entry.to_csv('analyser_log.csv', mode='a', header=False, index=False)
-    else:
-        log_entry = pd.DataFrame({'Messages Received': [numberOfMessages], 'Out of Order Messages': [outoforderMessagespercentage], 'Messages per Second': [msgsaSecond], 'Median Intermessage Gap': [median_intermessage_gap], 'Topic' : [current_topic], 'Analyser QoS': [analyser_qos]})
-        log_entry.to_csv('analyser_log.csv', mode='a', header=False, index=False)
+    with open('analyser_log.csv', 'a', newline='') as file:
+        writer = csv.DictWriter(file, fieldnames=[
+            "Messages Received", 
+            "Out of Order Messages", 
+            "Messages per Second", 
+            "Median Intermessage Gap", 
+            "Topic", 
+            "Analyser QoS"
+        ])
+        
+        # Write the header only if the file is new or empty
+        if file_is_empty:
+            writer.writeheader()
+        
+        # Write the log entry
+        writer.writerow(log_entry)
 
 # Function to get initial system statistics
 def get_system_stats():
@@ -193,4 +224,4 @@ if __name__ == '__main__':
     while analyser_qos < 3: # Loop through all QoS levels of analyer qos
         publish_values()
         analyser_qos += 1
-    print('All values published successfully.')
+    print('All tests published successfully.')

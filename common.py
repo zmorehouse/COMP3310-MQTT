@@ -2,4 +2,4 @@
 
 host = "localhost" # The IP address of the broker
 port = 1883 # The port of the broker
-duration = 60 # The duration of the test in seconds
+duration = 10 # The duration of the test in seconds
