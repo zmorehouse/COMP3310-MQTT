@@ -30,17 +30,17 @@ qos_levels = [0, 1, 2]
 
 # Initialize global variables
 analyser_qos = 0
-messageTotal = 0
-numberOfMessages = 0
-outoforderMessages = 0
-lastMessageCount = 0
-lastMessageTime = None
-timeTracker = []
+message_total = 0
+number_of_messages = 0
+outoforder_messages = 0
+last_message_count = 0
+last_message_time = None
+time_tracker = []
 total_received_messages = 0
 total_dropped_messages = 0
 received_messages = 0
 dropped_messages = 0
-startValues = False
+start_sys_values = False
 
 # Function to publish a message to a topic. This is used to send configuration values to the publishers
 def publish_message(topic, message):
@@ -49,29 +49,29 @@ def publish_message(topic, message):
 
 # Callback for when a message is received
 def on_message(client, userdata, message):
-    global messageTotal, numberOfMessages, outoforderMessages, lastMessageCount, lastMessageTime, timeTracker, received_messages, dropped_messages, total_received_messages, total_dropped_messages, startValues
+    global message_total, number_of_messages, outoforder_messages, last_message_count, last_message_time, time_tracker, received_messages, dropped_messages, total_received_messages, total_dropped_messages, start_sys_values
 
     # Check if the message is a counter message and process it
     if message.topic.startswith("counter/"):  
-        messageTotal += 1
+        message_total += 1
         currentMessageCount = int(message.payload)
         currentTime = time.time()
         
         # Check if the message is out of order. If it is, add it to the out of order messages count and do not calculate the median time difference
-        if currentMessageCount != lastMessageCount + 1:
-            outoforderMessages += 1
-            lastMessageTime = currentTime
+        if currentMessageCount != last_message_count + 1:
+            outoforder_messages += 1
+            last_message_time = currentTime
         else:
-            if lastMessageTime is not None:
-                timeDiff_ms = (currentTime - lastMessageTime) * 1000
-                timeTracker.append(timeDiff_ms)
-            lastMessageTime = currentTime
-        lastMessageCount = currentMessageCount
+            if last_message_time is not None:
+                timeDiff_ms = (currentTime - last_message_time) * 1000
+                time_tracker.append(timeDiff_ms)
+            last_message_time = currentTime
+        last_message_count = currentMessageCount
     
-        numberOfMessages += 1
+        number_of_messages += 1
 
     # If the initial system statistics exist already, calculate and update the variables. If not, assign. 
-    elif not startValues:
+    elif not start_sys_values:
         if message.topic == "$SYS/broker/publish/messages/received":
             total_received_messages = int(message.payload.decode())
         elif message.topic == "$SYS/broker/publish/messages/dropped":
@@ -87,7 +87,7 @@ def on_message(client, userdata, message):
 
 # Function to publish configuration values and run tests
 def publish_values():
-    global analyser_qos, messageTotal, numberOfMessages, outoforderMessages, lastMessageCount, lastMessageTime, timeTracker, received_messages, dropped_messages
+    global analyser_qos, message_total, number_of_messages, outoforder_messages, last_message_count, last_message_time, time_tracker, received_messages, dropped_messages
     # Loop through all test combinations
     for instance_count in instance_counts:
         for delay in delays:
@@ -117,18 +117,18 @@ def publish_values():
                 mqttc.unsubscribe(f"$SYS/broker/publish/messages/dropped")
 
                 # Reset variables for the next test
-                messageTotal = 0
-                numberOfMessages = 0
-                outoforderMessages = 0
-                timeTracker = []
-                lastMessageTime = None
-                lastMessageCount = 0
+                message_total = 0
+                number_of_messages = 0
+                outoforder_messages = 0
+                time_tracker = []
+                last_message_time = None
+                last_message_count = 0
 
     print(f'All values published at Analyser QoS: {analyser_qos}') # Print a message to indicate that all values have been published at a specific QoS
 
 # Function to log system information to a CSV file
 def system_info(current_topic, instance_count):
-    global received_messages, dropped_messages, numberOfMessages, outoforderMessages, timeTracker, analyser_qos 
+    global received_messages, dropped_messages, number_of_messages, outoforder_messages, time_tracker, analyser_qos 
 
     sys_msgs_a_second = round(((received_messages / instance_count) / common.duration), 2) # Calculate messages received per second
     sys_dropped_msgs = round((dropped_messages / received_messages) * 100, 2) # Calculate percentage of dropped messages
@@ -156,30 +156,30 @@ def system_info(current_topic, instance_count):
         writer.writerow(log_entry)
 
 def calculate_statistics(current_topic):
-    global numberOfMessages, outoforderMessages, timeTracker, analyser_qos
+    global number_of_messages, outoforder_messages, time_tracker, analyser_qos
 
     # Calculate out of order message %
-    if outoforderMessages != 0 or numberOfMessages != 0:
-        outoforderMessagespercentage = round(outoforderMessages / numberOfMessages * 100, 3)
+    if outoforder_messages != 0 or number_of_messages != 0:
+        outoforder_messagespercentage = round(outoforder_messages / number_of_messages * 100, 3)
     else:
-        outoforderMessagespercentage = 0
+        outoforder_messagespercentage = 0
 
     # Calculate messages per second
-    if numberOfMessages != 0:
-        msgsaSecond = round(numberOfMessages / common.duration, 3)
+    if number_of_messages != 0:
+        msgsaSecond = round(number_of_messages / common.duration, 3)
     else:
         msgsaSecond = 0
 
     # Calculate median intermessage gap
-    if len(timeTracker) != 0:
-        median_intermessage_gap = round(sum(timeTracker) / len(timeTracker), 3)
+    if len(time_tracker) != 0:
+        median_intermessage_gap = round(sum(time_tracker) / len(time_tracker), 3)
     else:
         median_intermessage_gap = 0
 
     # Define the log entry
     log_entry = {
-        'Messages Received': numberOfMessages,
-        'Out of Order Messages': outoforderMessagespercentage,
+        'Messages Received': number_of_messages,
+        'Out of Order Messages': outoforder_messagespercentage,
         'Messages per Second': msgsaSecond,
         'Median Intermessage Gap': median_intermessage_gap,
         'Topic': current_topic,
@@ -210,11 +210,11 @@ def calculate_statistics(current_topic):
 
 # Function to get initial system statistics
 def get_system_stats():
-    global total_received_messages, total_dropped_messages, startValues
+    global total_received_messages, total_dropped_messages, start_sys_values
     mqttc.subscribe(f"$SYS/broker/publish/messages/received", qos=analyser_qos)
     mqttc.subscribe(f"$SYS/broker/publish/messages/dropped", qos=analyser_qos)
     time.sleep(5) # Sleep for 10 seconds to allow the system statistics to be received
-    startValues = True
+    start_sys_values = True
 
 # Main script execution
 if __name__ == '__main__':
