@@ -15,7 +15,8 @@ The testing suite conducts 180 tests, each lasting 60 seconds, and varying the f
 ## Libraries Used
 - `time`: To keep track of time delays
 - `os and csv`: To write statistics to relevant csv files
-- `paho`: For MQTT connections with the mosquitto broker. 
+- `paho`: For MQTT connections with the mosquitto broker. **This will need to be installed for the program to run (it is not native)** 
+[Install It Here] (https://pypi.org/project/paho-mqtt/) or use `pip install paho-mqtt`
 
 ============================================
 
@@ -46,6 +47,8 @@ If you need to change either **the broker the scripts connect to** or **the dura
 ============================================
 
 ## Usage
+Firstly, please ensure the **paho-mqtt library** is installed before attempting to run the program.
+[Install It Here] (https://pypi.org/project/paho-mqtt/) or use `pip install paho-mqtt`
 
 #### Running without Batch File
 As batch files can be security risks, I understand not all may want to run the program via `run.bat`. If this is the case, please follow the below steps 
