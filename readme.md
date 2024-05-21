@@ -3,12 +3,16 @@
 
 This repository contains a set of scripts designed to test and analyze the performance of an MQTT Mosquitto broker under various conditions. The tests are conducted over 60-second increments and include a variety of configurations to measure message transmission, reception, and ordering.
 
+This testing suite is designed to run on a locally hosted Mosquitto broker, using the Paho library. Before running these tests in a different scenario, please read through the explanation below and modify the script accordingly. 
+
 ============================================
 
-**Important Note : While the program runs tests at 60 second increments, on high-spec computers this typically leads to the client queueing too many messages and lagging behind on x/0/0 tests. While these will eventually catch up, I recommend running the tests at 15 second durations to ensure results are accurate. This is outlined further in my report.** 
- 
-## Overview
+**Important Note:**
+While the program runs tests at 60 second increments, on high-spec computers this typically leads to the client queueing too many messages and lagging behind on x/0/0 tests. 
+While these do eventually catch up, I recommend running the tests at **15 second increments** to ensure results are reliable and accurate. 
+These irregularities (and their trends in my dataset) are outlined further in my report, under the QoS and Delay headings.
 
+## Overview
 The testing suite conducts 180 tests, each lasting 60 seconds, and varying the following parameters:
 - Number of publisher instances (1 to 5)
 - Publishing Quality of Service (QoS) levels, on both the analyser and client sides (0, 1, and 2)
@@ -17,7 +21,7 @@ The testing suite conducts 180 tests, each lasting 60 seconds, and varying the f
 ## Libraries Used
 - `time`: To keep track of time delays
 - `os and csv`: To write statistics to relevant csv files
-- `paho`: For MQTT connections with the mosquitto broker. **This will need to be installed for the program to run (it is not native)** 
+- `paho`: For MQTT connections with the mosquitto broker. **This will need to be installed for the program to run (it is not native to python)** 
 [Install It Here] (https://pypi.org/project/paho-mqtt/) or use `pip install paho-mqtt`
 
 ============================================
@@ -53,7 +57,7 @@ Firstly, please ensure the **paho-mqtt library** is installed before attempting 
 [Install It Here] (https://pypi.org/project/paho-mqtt/) or use `pip install paho-mqtt`
 
 #### Running without Batch File
-As batch files can be security risks, I understand not all may want to run the program via `run.bat`. If this is the case, please follow the below steps 
+As batch files can be security risks, I understand not all may want to run the program via `run.bat`. If this is the case, please follow the below steps :
 1. Launch terminal with administrative privileges (to allow the program to write to relevant logs).
 2. CD to the /ZM_MQTT Directory.
 3. Run all 5 publisher instances using `python pub_1.py` -> `python pub_5.py`. Python3 is also usable here. 
@@ -61,8 +65,9 @@ As batch files can be security risks, I understand not all may want to run the p
 5. Wait for analyser to run all 180 tests, and close itself. The publishing instances will run indefinently until the terminal is closed, incase additional monitoring is required. 
 
 #### Running with the Batch File (Windows Users)
-1. Ensure you have administrative privileges (to allow the program to write to relevant logs)/
-2. Run the `run.bat` script to start the testing suite.
+If you are happy to run the `run.bat` file (and are on a Windows machine), follow these steps :
+1. Ensure you have administrative privileges (to allow the program to write to relevant logs)
+2. Open the `run.bat` file to start the testing suite.
 3. The `run.bat` script will launch all 5 publisher scripts, wait 2 seconds, then launche the analyser script
 
 ### Modifying Test Parameters
